@@ -18,7 +18,7 @@ Power = Voltage * Current
 
 Current = Power / Voltage = 0.5m / 1.5 = 0.333 mA (or 333.33 uA).
 
-un=27.3809mM er=3.9 tox=4.1n 
+un=27.3809mM er=3.9 tox=4.1nm 
 
 Since it's an Amplifier, we need to make sure that it's present in the Saturation Region.
 
@@ -48,7 +48,6 @@ A 1kHz AC signal was applied to observe the time-domain amplification and the 18
 
 * **Input Voltage ($V_{in}$):** 20mV peak-to-peak
 * **Output Voltage ($V_{out}$):** 46.35mV peak-to-peak
-* ($V_{out}$):
 * **Calculated Gain:** 46.35mV / 20mV = **-2.31 V/V**(since it is 180deg phase shift)
   
 * **Vin:**
@@ -77,8 +76,6 @@ An AC sweep was performed to find the bandwidth, which is heavily influenced by 
 ![AC Analysis without Capacitor](images/AC-analysis-without-capacitor.png)
 * **Mid-band Gain:** ~7.3 dB
 * **Upper Cut-off Frequency ($f_H$):** 88.3GHz
-
-Here u can see that without load capacitor the bandwidth is higher,B.W=Fh-Fl=88.3GHz which is a significant increase in the B.W showing how load capacitance creates the dominant pole.
 
 ### **Effect of Load Capacitance on Frequency Response (AC Analysis)**
 
@@ -154,6 +151,6 @@ The CS Amplifier was successfully designed and verified.
 * The measured power consumption was strictly maintained at **0.5mW**. 
 * The Q-point was successfully set to **0.75V**, allowing clean amplification with a gain of **2.31 V/V**.
 * The frequency response confirmed an operational bandwidth up to **79.6 MHz** driven by the 1pF load.
-* Here by fundamental principle , its observed to make the MOSFET work in Saturation in almost linear part to get maximum gain. Hence the operating window should be chosen correctly and the Q point should set in suc a way for the Vds, such that there will not be any distortion or clipped part of the output signal. Basically to aloow full 360 deg swing for any changes in my voltage within the Vgs window.
+* Here by fundamental principle , its observed to make the MOSFET work in Saturation in almost linear part to get maximum gain. Hence the operating window should be chosen correctly and the Q point should set in suc a way for the Vds, such that there will not be any distortion or clipped part of the output signal. Basically to allow full 360 deg swing for any changes in my voltage within the Vgs window.
 
 Hence a CS Amplifier of Vgs = 0.9V, W = 275nm , L = 180nm , Vdd = 1.8V and Rd = 2.25k is designed and verified for power budget of P = 0.5mW.
