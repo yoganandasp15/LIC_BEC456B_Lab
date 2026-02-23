@@ -20,6 +20,8 @@ Current = Power / Voltage = 0.5m / 1.5 = 0.333 mA (or 333.33 uA).
 
 un= $273.809cm^2/V$ er=3.9 tox=4.1nm 
 
+$R_D = \frac{V_{DD} - V_{DS}}{I_D} = \frac{1.5\text{V} - 0.75\text{V}}{0.333\text{mA}} = 2.25\text{ k}\Omega$
+
 Since it's an Amplifier, we need to make sure that it's present in the Saturation Region.
 
 Here we observe Vgs = 0.9V and Vt = 0.366V, Also Vgs - Vt = Vov = 0.534V. 
