@@ -3,7 +3,7 @@
 ## Brief Theory
 The Metal Oxide Semiconductor Field Effect Transistor (MOSFET) is widely used as a switch and an amplifier. Among its configurations, the **Common Source (CS) Amplifier** is highly preferred because it offers high voltage gain and good input impedance. 
 
-For the MOSFET to act as a linear amplifier, it must be biased in the **Saturation Region** ($V_{ds} \ge V_{ov}$). Setting the correct Q-point (quiescent point) ensures maximum signal swing without the output clipping. A basic CS amplifier provides an inverted output, demonstrating a 180-degree phase shift relative to the input signal.
+For the MOSFET to act as a linear amplifier, it must be biased in the **Saturation Region** ($V_{DS} \ge V_{ov}$). Setting the correct Q-point (quiescent point) ensures maximum signal swing without the output clipping. A basic CS amplifier provides an inverted output, demonstrating a 180-degree phase shift relative to the input signal.
 
 ---
 Q1. CS Amplifier design having a power budget of 0.5mW and supply voltage of 1.5V. Load capacitance of 1pF and tsmc018.lib file for LTspice.
@@ -18,20 +18,20 @@ Power = Voltage * Current
 
 Current = Power / Voltage = 0.5m / 1.5 = 0.333 mA (or 333.33 uA).
 
-un= $273.809cm^2/V$ er=3.9 tox=4.1nm 
+$\mu_n = 273.809\text{ cm}^2/\text{V}$, $\epsilon_r = 3.9$, $t_{ox} = 4.1\text{nm}$
 
 $R_D = \frac{V_{DD} - V_{DS}}{I_D} = \frac{1.5\text{V} - 0.75\text{V}}{0.333\text{mA}} = 2.25\text{ k}\Omega$
 
 Since it's an Amplifier, we need to make sure that it's present in the Saturation Region.
 
-Here we observe Vgs = 0.9V and Vt = 0.366V, Also Vgs - Vt = Vov = 0.534V. 
-Thus by fundamental concept, Vds >= Vov. Here our Vds is 0.75V > 0.534V. Its in SATURATION.
+Here we observe VGS = 0.9V and VT = 0.366V, Also VGS - Vt = Vov = 0.534V. 
+Thus by fundamental concept, VDS >= Vov. Here our VDS is 0.75V > 0.534V. Its in SATURATION.
 
 $$
 I_D = \frac{1}{2} k_n (V_{ov})^2
 $$
 
-With having L = 180nm and W = 2.75um, the drain current of (approx.) Id == 333 uA is calculated and verified.
+With having L = 180nm and W = 2.75um, the drain current of (approx.) ID == 333 uA is calculated and verified.
 
 1. DC Operating Point :
 
@@ -41,7 +41,7 @@ The DC bias points verify that the power and current match the calculated budget
 ![DC Operating Point](images/DC-operating-point.png)
 
 **B. Voltage Transfer Characteristics (VTC)**
-A DC sweep of the input voltage ($V_{gs}$) demonstrates the transition from cut-off to saturation (linear region) and finally triode.
+A DC sweep of the input voltage ($V_{GS}$) demonstrates the transition from cut-off to saturation (linear region) and finally triode.
 
 ![Voltage Transfer Characteristic](images/DC-sweep.png)
 
@@ -116,12 +116,12 @@ To calculate the theoretical voltage gain of the Common Source amplifier, we fir
 
 **Step 1: Calculate Transconductance ($g_m$)**
 Using the first-order square-law approximation for a MOSFET in the saturation region:
-$$g_m \approx \frac{2 I_D}{V_{GS} - V_{TH}}$$
+$$g_m \approx \frac{2 I_d}{V_{gs} - V_{TH}}$$
 
 Based on the circuit design and the `tsmc018.lib` SPICE model:
-* **ID:** 332.97 µA (from DC operating point simulation)
-* **VGS:** 0.9V (Input DC bias)
-* [cite_start]**VTH:** 0.366V (Nominal threshold voltage `VTH0` extracted from the TSMC 180nm library [cite: 2])
+* **Id:** 332.97 µA (from DC operating point simulation)
+* **Vgs:** 0.9V (Input DC bias)
+* **VTH:** 0.366V (Nominal threshold voltage `VTH0` extracted from the TSMC 180nm library 
 
 $$g_m = \frac{2 \times 332.97 \times 10^{-6}}{0.9 - 0.366}$$
 $$g_m = \frac{665.94 \times 10^{-6}}{0.534}$$
@@ -155,4 +155,4 @@ The CS Amplifier was successfully designed and verified.
 * The frequency response confirmed an operational bandwidth up to **79.6 MHz** driven by the 1pF load.
 * Here by fundamental principle , its observed to make the MOSFET work in Saturation in almost linear part to get maximum gain. Hence the operating window should be chosen correctly and the Q point should set in such a way for the Vds, such that there will not be any distortion or clipped part of the output signal. Basically to allow full 360 deg swing for any changes in my voltage within the Vgs window.
 
-Hence a CS Amplifier of Vgs = 0.9V, W = 2.75um , L = 180nm , Vdd = 1.5V and Rd = 2.25k is designed and verified for power budget of P = 0.5mW.
+Hence a CS Amplifier of VGS = 0.9V, W = 2.75um , L = 180nm , VDD = 1.5V and RD = 2.25k is designed and verified for power budget of P = 0.5mW.
