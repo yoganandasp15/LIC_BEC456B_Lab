@@ -123,66 +123,70 @@ Also, the simulated Transient gain (**10.37 V/V**) is slightly different from th
 # Experiment 2b: Common Source Amplifier with Active Load and Source Degeneration
 
 ## 1. Objective
-To design, simulate, and analyze a Common Source (CS) amplifier configuration using the TSMC 180nm process. The experiment follows a strict engineering workflow:
-1. Establish initial design assumptions and biasing strategies.
-2. Perform DC Analysis and DC Sweeps to secure a highly linear operating point.
-3. Perform Transient Analysis to verify small-signal time-domain amplification.
-4. Perform AC Analysis to extract the frequency response (Gain, Bandwidth, UGB).
-5. Mathematically verify the simulation results against the exact small-signal model.
+To design, simulate, and analyze Configuration B—a Common Source (CS) amplifier utilizing an **active current source for source degeneration**—using the TSMC 180nm process in LTspice. The experiment follows a strict rules to evaluate its performance:
+
+1. **DC Analysis:** Establish biasing strategies to fix the operating point, ensuring all transistors remain in the saturation region, and calculate the total DC power dissipation.
+2. **DC Sweep:** Verify the transfer characteristics to secure a highly linear operating point.
+3. **Transient Analysis:** Inject a small-signal input to verify time-domain linear amplification, and extract the voltage gain along with the maximum input and output voltage swings.
+4. **AC Analysis:** Extract the frequency response metrics, including the midband Gain, 3dB Bandwidth, and Unity Gain Bandwidth (UGB).
+5. **Mathematical Verification:** Compare the extracted simulation metrics against the exact small-signal theoretical model to justify the results and understand the trade-offs of active degeneration.
 
 ---
 
 ## 2. Circuit Diagram & Biasing Strategy
-The circuit is a Common Source amplifier consisting of three MOSFETs. To make the circuit function as a linear amplifier, the DC voltages cannot be arbitrary; they must be carefully derived from initial design assumptions to keep all transistors in the saturation region.
+The circuit is a Common Source amplifier consisting of three MOSFETs. To keep all transistors in the saturation region, the DC bias voltages were calculated based on three initial design assumptions: a target drain current of **ID = 0.3 mA**, an overdrive voltage of **VOV = 0.25V**, and a degeneration voltage drop of **VRS = 0.30V**.
 
-**Our Design Assumptions:**
-To start our hand calculations, we targeted a standard drain current ($I_D = 0.3\text{ mA}$) and assumed an initial overdrive voltage ($V_{OV} = 0.25\text{V}$) to ensure the transistors are comfortably in saturation. We also designated the voltage drop across our degeneration network to be $V_{RS} = 0.30\text{V}$ (which sets the source voltage of our main amplifier).
+Based on these targets, the voltage sources were derived as follows:
 
-Based on these assumptions, we derived the following voltage sources:
+* **M1 (NMOS Amplifying Transistor):** Assuming a typical 180nm NMOS threshold voltage (VTH ~ 0.36V), the required DC gate-to-source voltage is VGS = VTH + VOV = 0.61V. Since the source sits at 0.30V (VRS), the input DC bias is:
+  **VIN** = VGS + VRS = 0.60V + 0.30V = **0.90V**.
 
-* **M1 (NMOS) & Input Bias (Vin = 0.90V):** M1 is our primary amplifying transistor. Assuming a typical 180nm NMOS threshold voltage ($V_{th}$) of roughly 0.35V during the initial design phase, the required gate-to-source voltage is $V_{GS} = V_{th} + V_{OV} = 0.60\text{V}$. 
-  Since we assumed our degeneration voltage ($V_{RS}$) is 0.30V, the source of M1 is sitting at 0.30V above ground. Therefore, the DC bias required at the gate is simply the source voltage plus the required $V_{GS}$: 
-  **Vin = VGS1 + VRS = 0.60V + 0.30V = 0.90V**.
+* **M2 (NMOS Current Source):** M2 provides active source degeneration. Its source is grounded, meaning its gate bias (VB2) directly sets its VGS. To sink the target 0.3 mA, it requires a VGS of roughly 0.60V. After minor SPICE tuning for its specific VTH, this was locked at:
+  **VB2 = 0.61V**.
 
-* **M2 (NMOS) & Current Source Bias (VB2 = 0.61V):**
-  M2 acts as a constant current source providing active source degeneration. Its source is tied directly to ground, meaning its $V_{GS}$ is exactly equal to its gate voltage (**VB2**). To sink our target 0.3 mA of current, it requires roughly the same ~0.60V $V_{GS}$ as M1. Through slight SPICE tuning to account for M2's specific threshold voltage (0.50V), we locked this bias at **0.61V**. This perfectly maintains our assumed 0.30V across M2 (**VDS2 = 0.30V**).
-
-* **M3 (PMOS) & Active Load Bias (VB1 = 0.86V):**
-  M3 acts as an active load. Its source is tied to the supply voltage (**VDD = 1.50V**). To push exactly 0.3 mA of current down into the NMOS stack, M3 requires a specific source-to-gate voltage ($|V_{GS}|$). Based on our PMOS sizing, it needs an absolute $|V_{GS}|$ of approximately 0.64V. 
-  Therefore, the gate voltage must be: 
-  **VB1 = VDD - |VGS3| = 1.50V - 0.64V = 0.86V**.
+* **M3 (PMOS Active Load):** Its source is tied to VDD (1.50V). To push exactly 0.3 mA down into the circuit, it requires an absolute |VGS| of approximately 0.64V based on our selected aspect ratio. Therefore, the gate bias is:
+  **VB1** = VDD - |VGS| = 1.50V - 0.64V = **0.86V**.
 
 ![Circuit Diagram](Images/Exp-2b/Exp-2b-circuit.png)
 
 ---
 
 ## 3. Theoretical Formulation
-For a common-source amplifier with an active load and active source degeneration, the voltage gain is dictated by the transconductance of the amplifying transistor ($g_{m1}$) and the output resistances of all three MOSFETs.
+To understand the behavior of this amplifier, we rely on its small-signal model. In this configuration, the physical source resistor is replaced by an active NMOS current source (M2). While M2 provides excellent DC bias stability, it introduces an extremely large small-signal output resistance ($r_{o2}$) at the source of the amplifying transistor (M1).
 
-Replacing a physical source resistor with an active current source (M2) introduces a massive degeneration resistance ($r_{o2} \approx 5.26\text{ k}\Omega$). Because $r_{o2}$ is so large, the simplified gain equation ($A_v \approx -g_{m1} r_{o3} / (1 + g_{m1} r_{o2})$) becomes highly inaccurate because it ignores the channel length modulation ($r_{o1}$) of M1. 
+The standard, simplified gain equation for a source-degenerated amplifier is:
+$$A_v \approx \frac{-g_{m1} r_{o3}}{1 + g_{m1} r_{o2}}$$
 
-To accurately predict the gain of this specific topology, we must use the exact small-signal model equation (which will be executed and verified in Section 8):
+However, because the active degeneration resistance ($r_{o2}$) is exceptionally large, we cannot ignore the channel-length modulation of the main amplifier (M1). Ignoring the intrinsic output resistance ($r_{o1}$) leads to significant theoretical errors. Therefore, to accurately predict the midband gain and match our SPICE simulations, we must use the exact small-signal equation:
 $$A_v = \frac{-g_{m1}}{1 + g_{m1} r_{o2} + \frac{r_{o2}}{r_{o1}}} \times \left( \left[ g_{m1} r_{o2} r_{o1} + r_{o2} + r_{o1} \right] \parallel r_{o3} \right)$$
+
+*(Note: This exact theoretical model will be calculated using extracted SPICE parameters and compared against the simulated AC frequency response in Section 8).*
 
 ---
 
 ## 4. DC Analysis (Operating Point)
-With our biasing strategy established, the first step is to run a DC operating point simulation to ensure the theoretical calculations translate successfully to the SPICE models, specifically ensuring $|V_{ds}| > |V_{dsat}|$ for all devices.
+After setting up the bias voltages, a DC operating point simulation was performed. This step verifies that our hand calculations work in the actual SPICE model and ensures that all transistors are operating in the saturation region ($|V_{DS}| > |V_{DSAT}|$). It also allows us to calculate the circuit's total power dissipation.
 
 ![DC Operating Point](Images/Exp-2b/Exp-2b-op.png)
 
 ### DC Parameters Table
-| Transistor | Id (mA) | Vgs (V) | Vth (V) | Vds (V) | Vdsat (V) | Region |
+| Transistor | ID (mA) | VGS (V) | VTH (V) | VDS (V) | VDSAT (V) | Region |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **M1 (NMOS)** | 0.30 | 0.60 | 0.476 | 0.754 | 0.099 | Saturation |
 | **M2 (NMOS)** | 0.30 | 0.61 | 0.500 | 0.300 | 0.094 | Saturation |
 | **M3 (PMOS)** | -0.30 | -0.64 | -0.509 | -0.445 | -0.122 | Saturation |
 
-**DC Bias Voltages:**
-* **Input Bias (Vin):** 0.90V
-* **Output Bias (Vout):** 1.054V
+**Total DC Power Dissipation:**
+Since the entire circuit consists of a single branch drawing 0.30 mA from the 1.50V supply, the total DC power is calculated as:
+$$P_{DC} = V_{DD} \times I_D = 1.50\text{ V} \times 0.30\text{ mA} = 0.45\text{ mW} \text{ (or } 450\text{ }\mu\text{W)}$$
 
-*Engineering Sanity Check:* The input bias is **0.90V**. M1's $V_{gs}$ is **0.60V**, meaning the simulated source voltage is exactly **0.30V**. This perfectly matches M2's $V_{ds}$ of **0.30V**, confirming that our initial design assumptions securely forced the simulation into a mathematically sound operating point. For the PMOS active load (M3), saturation is verified via absolute values ($|-0.445\text{V}| > |-0.122\text{V}|$).
+**Verification of Biasing:**
+* **Input Bias (VIN):** 0.90V
+* **Output Bias (VOUT):** 1.054V
+
+To confirm our design values, we can check the node voltages. The input DC bias (VIN) is 0.90V. Since M1 has a simulated VGS of 0.60V, the source voltage must be exactly 0.30V ($0.90\text{V} - 0.60\text{V}$). This perfectly matches the VDS of M2, showing that our active degeneration network is working exactly as we planned. 
+
+Additionally, for the PMOS active load (M3), saturation is confirmed using absolute values ($|-0.445\text{V}| > |-0.122\text{V}|$). Because all three transistors satisfy the saturation condition, the circuit is ready to function as a linear amplifier.
 
 ---
 
