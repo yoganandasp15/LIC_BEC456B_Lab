@@ -29,3 +29,41 @@ All three circuits utilize a PMOS active load ($M_2$) to provide a high output r
 * **Advantage:** Because $M_1$ and $M_3$ are built on the same silicon, their transconductances ($g_{m1}$ and $g_{m3}$) track each other across temperature and process variations. The gain becomes a stable ratio of these parameters, making the circuit incredibly resilient.
 * **Theoretical Gain (Approximate):**
   $$A_v\approx\frac{-g_{m1}}{1+\frac{g_{m1}}{g_{m3}}}$$
+
+  ## 3. Simulation Results & Analysis
+
+### 3.1 Configuration A: Resistor Degeneration ($R_S$)
+
+#### 1. DC Analysis
+The operating point was set to ensure all transistors operate in the saturation region. A source resistor $R_S$ of $666.67 \, \Omega$ was used to set the desired bias point.
+
+* **Supply Voltage ($V_{DD}$):** 1.5 V
+* **Input DC Bias ($V_{in}$):** 0.81 V
+* **Drain Current ($I_D$):** $300.7 \mu \text{A}$
+* **Output DC Voltage ($V_{out}$):** 0.95 V
+* **Total DC Power Dissipation:** $451.05 \mu \text{W}$
+
+![DC Operating Point](images_config_A/Exp-2a-DC-op.png)
+
+#### 2. DC Sweep Analysis
+A DC sweep was performed to identify the saturation region of the amplifier, confirming that the chosen $V_{in}$ of 0.81 V places the circuit comfortably in the high-gain linear region.
+
+![DC Sweep](images_config_A/Exp-2a-DC-sweep.png)
+
+#### 3. Transient Analysis
+A 1 kHz sine wave with a 10 mV amplitude ($20 \text{ mV}_{p-p}$) was applied to extract the time-domain voltage gain.
+
+* **Input Peak-to-Peak Voltage ($V_{in(p-p)}$):** 20 mV
+* **Output Peak-to-Peak Voltage ($V_{out(p-p)}$):** 207.5 mV
+* **Calculated Transient Gain ($A_v$):** 10.37 V/V
+
+![Transient Response](images_config_A/Exp-2a-transient-Vout.png)
+
+#### 4. AC Analysis
+An AC frequency sweep was performed to determine the small-signal gain and bandwidth parameters.
+
+* **AC Mid-Band Gain (Mag):** 20.826 dB
+* **AC Linear Gain ($A_v$):** 10.99 V/V
+* **Phase:** $-180^{\circ}$ (Inverting)
+
+![AC Analysis](images_config_A/Exp-2a-AC-analysis.png)
