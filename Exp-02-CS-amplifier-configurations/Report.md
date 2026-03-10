@@ -270,3 +270,308 @@ $$A_v \text{ (dB)} = 20 \log_{10}(1.766) = 4.94 \text{ dB}$$
 The Configuration B Common Source Amplifier was successfully designed, simulated, and mathematically verified. The progressive workflow from hand-calculated bias design to DC analysis confirmed that the main amplifier, active load, and current source were all securely biased into the saturation region exactly as predicted. 
 
 While replacing a physical source resistor with an active current source (M2) saves physical silicon area and provides exceptional bias stability, its massive degeneration resistance severely penalizes the voltage gain. As a result, the simulated midband gain dropped to **5.08 dB** (compared to earlier non-degenerated topologies). However, as a trade-off for the low gain, the heavy degeneration allows the circuit to exhibit a highly stable and broad operational bandwidth, successfully achieving a UGB of **458.14 MHz**. The tight correlation between our exact theoretical hand-calculations and the SPICE AC analysis confirms the validity of the small-signal model and concludes the experiment successfully.
+
+---
+# Experiment 2(c) — Common Source Amplifier with Current Mirror Load
+
+**Course:** Linear Integrated Circuits Lab — BEC456B  
+**Technology:** TSMC 180nm CMOS | **Simulator:** LTSpice XVII  
+**VDD = 1.5V | P ≤ 0.5mW | CL = 1pF | L = 180nm**
+
+---
+
+## 1. Aim
+
+The aim of this experiment is to design and simulate a Common Source (CS) amplifier using a PMOS current mirror as the active load, in TSMC 180nm CMOS technology using LTSpice. The specific objectives are:
+
+1. Fix the DC operating point so that all transistors are in saturation and verify the power consumption is within the given budget.
+2. Run a transient simulation to confirm the amplifier is working linearly without distortion.
+3. Find the voltage gain, maximum output swing, and maximum input swing, and compare them with the theoretical values.
+4. Run an AC simulation and extract the mid-band gain, 3dB bandwidth, and Unity Gain Bandwidth (UGB) with CL = 1pF.
+5. Justify any differences between the theoretical and simulated results.
+
+---
+
+## 2. Circuit Description
+
+![Circuit Diagram](Exp-2c-circuit.png)
+
+The circuit uses three MOSFETs. M1 is the NMOS transistor doing the actual amplification — it is configured in common source, meaning the input goes to its gate and the output is taken from its drain. M2 is a PMOS transistor acting as the active load — instead of a resistor, we use M2 because it gives a much higher output resistance, which directly increases the gain. M3 is a diode-connected NMOS (gate tied to drain) placed at the source of M1, and it works as the current mirror reference to set the bias current accurately.
+
+VDD = 1.5V is connected to the source of M2. The gate of M2 is biased at 0.86V through voltage source V5. The input signal is applied to the gate of M1 through V3, which is set as `SINE(1.23V, 10mV, 1kHz) AC 1`. The output Vout is taken at the common drain point of M1 and M2, and a load capacitance of CL = 1pF is connected there for the AC simulation.
+
+---
+
+## 3. Design Procedure
+
+### 3.1 Given Specifications
+
+- Supply voltage: VDD = 1.5V
+- Maximum power dissipation: P ≤ 0.5mW
+- Load capacitance: CL = 1pF
+- Technology: TSMC 180nm CMOS
+- Channel length for all transistors: L = 180nm
+
+### 3.2 Step 1 — Finding the Drain Current
+
+The first thing we did was find the maximum drain current allowed from the power budget:
+
+$$I_D = \frac{P}{V_{DD}} = \frac{0.5 \times 10^{-3}}{1.5} = 0.333 \text{ mA}$$
+
+So the target quiescent current is 0.333 mA. The simulation gave Id = 0.301 mA, which keeps the power at 0.452 mW — just within the 0.5mW limit.
+
+### 3.3 Step 2 — Setting the Output DC Voltage
+
+This was the main design decision — where to place Vout(DC) so we get the maximum possible output swing without any transistor going into triode.
+
+For the output to swing without clipping, both M1 and M2 need to stay in saturation at all times. This means:
+
+- **Lower limit of Vout** — how low can Vout go before M1 or M3 leaves saturation:
+$$V_{out,min} = V_{DS,sat,M1} + V_{DS,sat,M3} \approx V_{ov,M1} + V_{ov,M3}$$
+
+- **Upper limit of Vout** — how high can Vout go before M2 leaves saturation:
+$$V_{out,max} = V_{DD} - |V_{DS,sat,M2}| = V_{DD} - |V_{ov,M2}|$$
+
+We started with VDD/2 = 0.75V as a reference center, then used VDD − 0.6 = 0.9V as the target center accounting for the available headroom. We then distributed a swing of ±0.44V symmetrically, which gave us:
+
+$$V_{out,DC} = V_{DD} - 0.44 = 1.5 - 0.44 = \mathbf{1.06 \text{ V}}$$
+
+The simulation confirmed V(vout) = **1.06024 V** ✓
+
+The reason Vout is placed closer to VDD rather than exactly at the middle is that the lower side has more headroom — the NMOS Vdsat values (M1 and M3 stacked) are smaller than the PMOS Vdsat (M2 alone), so we can afford to place Vout higher and still get a reasonable symmetric swing.
+
+### 3.4 Step 3 — Setting the Input Bias (Vin DC)
+
+Once we fixed Vout = 1.06V and Id = 0.301mA, we tuned Vin until the operating point settled correctly. From the BSIM3 log:
+
+- Vgs(M1) = 0.610V, Vth(M1) = 0.514V → Vov = **0.096V**
+- Vds(M1) = 0.440V >> Vov → **M1 is in saturation** ✓
+
+So we set **Vin = 1.23V** as the DC bias.
+
+### 3.5 Step 4 — Setting M2 Gate Bias
+
+M2's gate is biased at VB1 = 0.86V via V5:
+
+- Vgs(M2) = 0.86 − 1.5 = −0.64V
+- |Vth(M2)| = 0.509V → |Vov(M2)| = 0.131V
+- |Vds(M2)| = 0.440V > |Vov(M2)| → **M2 is in saturation** ✓
+
+### 3.6 Step 5 — W/L Sizing
+
+All transistors use L = 180nm as given. The widths were calculated using the drain current equation in saturation:
+
+$$I_D = \frac{1}{2} \mu C_{ox} \frac{W}{L} V_{ov}^2$$
+
+Each transistor was sized to carry the target Id at its respective Vov. M2 needs a much larger width because PMOS mobility is roughly half that of NMOS, so it needs more width to carry the same current. The final dimensions are:
+
+- **M1 (NMOS):** W = 27.47 µm, L = 180nm → W/L = 152.6
+- **M3 (NMOS):** W = 18.27 µm, L = 180nm → W/L = 101.5
+- **M2 (PMOS):** W = 58.1 µm, L = 180nm → W/L = 322.8
+
+---
+
+## 4. DC Operating Point Results
+
+![DC Operating Point](Exp-2c-dcop.png)
+
+![BSIM3 MOSFET Parameters](Exp-2c-logs.png)
+
+The .op simulation gives the node voltages and device parameters at the quiescent point. The important results are:
+
+- V(vin) = 1.23V (M1 gate bias as set)
+- V(vout) = **1.06024V** — exactly where we designed it ✓
+- V(vrs) = 0.620V — this is the source of M1 / drain of M3
+
+All three transistors carry **Id = 0.301 mA**, confirming the current mirror is working correctly.
+
+**Power check:**
+$$P = V_{DD} \times I_{D} = 1.5 \times 0.301 \times 10^{-3} = \mathbf{0.4515 \text{ mW} \leq 0.5 \text{ mW}} \checkmark$$
+
+**Saturation check** from the BSIM3 log (Vds must be greater than Vdsat for each transistor):
+
+- M1: Vds = 0.440V >> Vdsat = 0.089V ✅ Saturation
+- M3: Vds = 0.620V >> Vdsat = 0.100V ✅ Saturation
+- M2: |Vds| = 0.440V >> |Vdsat| = 0.122V ✅ Saturation
+
+The small-signal parameters we will use for gain calculation: gm1 = 4.52 mS, gm3 = 3.89 mS, gds1 = 0.148 mS, gds2 = 0.0971 mS, gds3 = 0.114 mS.
+
+---
+
+## 5. Theoretical Gain Calculation
+
+### 5.1 Computing ro Values
+
+From the gds values in the BSIM3 log:
+
+$$r_{o1} = \frac{1}{g_{ds1}} = \frac{1}{1.48 \times 10^{-4}} = \mathbf{6.757 \text{ k}\Omega}$$
+
+$$r_{o2} = \frac{1}{g_{ds2}} = \frac{1}{9.71 \times 10^{-5}} = \mathbf{10.299 \text{ k}\Omega}$$
+
+$$r_{o3} = \frac{1}{g_{ds3}} = \frac{1}{1.14 \times 10^{-4}} = \mathbf{8.772 \text{ k}\Omega}$$
+
+$$\frac{1}{g_{m3}} = \frac{1}{3.89 \times 10^{-3}} = \mathbf{257.07 \ \Omega}$$
+
+### 5.2 Applying the Gain Formula
+
+We are using the full general formula where **all three λ ≠ 0** — meaning channel length modulation is considered for all three transistors M1, M2, and M3. None of them are treated as ideal. The formula from the sheet is:
+
+$$A_V = \frac{-g_{m1}}{\left[1 + g_{m1}\left(\frac{1}{g_{m3}} \| r_{o3}\right) + \frac{1}{\left(\frac{1}{g_{m3}} \| r_{o3}\right) \times r_{o1}}\right]} \times \left[g_{m1}\left(\frac{1}{g_{m3}} \| r_{o3}\right)r_{o1} + r_{o1} + \left(\frac{1}{g_{m3}} \| r_{o3}\right)\right] \| r_{o2}$$
+
+**Step 1 — Find (1/gm3 ∥ ro3):**
+
+This is the impedance seen at the source of M1 due to M3 being diode-connected.
+
+$$\frac{1}{g_{m3}} \| r_{o3} = \frac{257.07 \times 8772}{257.07 + 8772} = \mathbf{249.75 \ \Omega}$$
+
+Since 1/gm3 (257Ω) is much smaller than ro3 (8.77kΩ), the parallel result is almost equal to 1/gm3 — so ro3 barely contributes here.
+
+**Step 2 — Denominator:**
+
+$$\text{Denom} = 1 + (4.52 \times 10^{-3})(249.75) + \frac{1}{249.75 \times 6757}$$
+
+$$= 1 + 1.1289 + 0.000001 = \mathbf{2.1289}$$
+
+The third term is essentially zero (≈10⁻⁶) so it doesn't affect anything practically.
+
+**Step 3 — Numerator bracket (before the parallel with ro2):**
+
+$$\text{Num} = (4.52 \times 10^{-3})(249.75)(6757) + 6757 + 249.75$$
+
+$$= 7627.5 + 6757 + 249.75 = \mathbf{14634.25 \ \Omega}$$
+
+**Step 4 — Parallel with ro2:**
+
+$$14634.25 \| 10299 = \frac{14634.25 \times 10299}{14634.25 + 10299} = \mathbf{6044.71 \ \Omega}$$
+
+**Step 5 — Final gain:**
+
+$$A_V = \frac{-4.52 \times 10^{-3}}{2.1289} \times 6044.71 = \mathbf{-12.83 \text{ V/V}}$$
+
+$$\boxed{|A_V|_{dB} = 20\log_{10}(12.83) = \mathbf{22.17 \text{ dB}}}$$
+
+### 5.3 Output Resistance
+
+$$R_{out} = r_{o1} \| r_{o2} = \frac{6757 \times 10299}{6757 + 10299} = \mathbf{4.09 \text{ k}\Omega}$$
+
+---
+
+## 6. Transient Analysis
+
+![Transient Waveform — V(vout) and V(vin)](Exp-2c-transient.png)
+
+**Setup:** Input = SINE(1.23V, 10mV, 1kHz), simulated for 10ms.
+
+Looking at the waveform, the output (green) is clearly an amplified and inverted version of the input (blue). There's no distortion or clipping, which means all three transistors stayed in saturation throughout — exactly what we wanted.
+
+The output swings from around 0.92V to 1.19V (about 270mV peak-to-peak) for a 20mV peak-to-peak input. So the gain from the transient is roughly:
+
+$$|A_V|_{transient} \approx \frac{270}{20} = 13.5 \approx \mathbf{22.6 \text{ dB}}$$
+
+This matches well with both the theoretical value (22.17 dB) and the AC simulation (23.04 dB) ✓
+
+**Maximum output swing:**
+
+The output can only swing as far as the transistors allow before they leave saturation. Using the Vdsat values from the BSIM3 log:
+
+$$V_{out,min} = V_{DS,sat,M1} + V_{DS,sat,M3} = 0.089 + 0.100 = \mathbf{0.189 \text{ V}}$$
+
+$$V_{out,max} = V_{DD} - |V_{DS,sat,M2}| = 1.5 - 0.122 = \mathbf{1.378 \text{ V}}$$
+
+$$V_{out,swing,max} = 1.378 - 0.189 = \mathbf{1.189 \text{ V}_{pp}}$$
+
+From the DC point of 1.06V — we have 0.318V of upward swing and 0.871V of downward swing. The asymmetry makes sense because the M1+M3 stack on the bottom has lower combined Vdsat than M2 alone on the top.
+
+**Maximum input swing** (before the output clips):
+
+$$V_{in,swing,max} = \frac{1.189}{12.83} \approx \mathbf{92.7 \text{ mV}_{pp}}$$
+
+Our test input of 20mV pp is well within this, so no clipping — confirmed by the clean sinusoid in the transient plot ✓
+
+---
+
+## 7. AC Analysis
+
+### 7.1 Mid-band Gain
+
+![AC Gain — Mid-band](Exp-2c-gain.png)
+
+The AC sweep shows a flat gain region from very low frequencies up to around 100MHz. The cursor placed in the flat region reads a mid-band gain of **23.036 dB (14.17 V/V)**.
+
+Comparing with theory — we calculated **22.17 dB** using the full formula with all λ ≠ 0, and got **23.04 dB** from simulation. That's a difference of only **0.87 dB (~4%)**, which is a very good match for a hand calculation. The small error comes from the fact that the BSIM3 model in simulation additionally accounts for body effect on M1 (Vbs = −0.0537V shifts Vth), short-channel effects, and velocity saturation — none of which are captured in the long-channel formula.
+
+### 7.2 3dB Bandwidth
+
+![3dB Bandwidth](Exp-2c-3db-gain.png)
+
+Two cursors are used — one placed in the mid-band (164.33 kHz, 23.036 dB) and one at the point where the gain has dropped by 3dB (421.70 MHz, 20.035 dB). The cursor ratio box shows exactly **3.001 dB** difference, confirming:
+
+$$\mathbf{f_{3dB} = 421.7 \text{ MHz}}$$
+
+We can also estimate where the dominant pole should be from the output RC time constant:
+
+$$f_{p1} = \frac{1}{2\pi \cdot R_{out} \cdot C_L} = \frac{1}{2\pi \times 4090 \times 1 \times 10^{-12}} = \mathbf{38.9 \text{ MHz}}$$
+
+The simulated bandwidth (421.7 MHz) is about 10× higher than this estimate. This happens because M3's source degeneration reduces the effective output resistance at Vout — the pole moves to a higher frequency. So the bandwidth is actually better than what the simple RC calculation would suggest, which is a useful side-effect of this configuration.
+
+### 7.3 Unity Gain Bandwidth
+
+![Unity Gain Bandwidth](Exp-2c-UGB.png)
+
+The cursor is placed at the 0dB crossing point. It reads **6.7608 GHz** at a magnitude of 7.089 mdB which is essentially 0 dB, so:
+
+$$\mathbf{UGB = 6.761 \text{ GHz}}$$
+
+As a quick check using the gain-bandwidth product:
+
+$$GBW = 14.17 \times 421.7 \text{ MHz} = \mathbf{5.98 \text{ GHz}}$$
+
+The simulated UGB (6.76 GHz) is slightly higher than this because the gain doesn't roll off at a perfect −20dB/decade — higher-order poles start adding phase before we reach unity gain, pulling the actual 0dB crossing a bit higher than the ideal single-pole estimate.
+
+The phase at UGB is −294.25°, which means there's 114.25° of phase shift beyond −180°. This tells us there are significant higher-order poles in the system, which is expected for a three-transistor circuit.
+
+---
+
+## 8. Summary of Results
+
+| Parameter               | Theoretical          | Simulated            |
+|-------------------------|----------------------|----------------------|
+| Drain Current (Id)      | 0.333 mA             | 0.301 mA             |
+| Power Dissipation       | 0.5 mW (max)         | 0.452 mW ✓           |
+| V(vout) DC              | 1.06 V               | 1.06024 V ✓          |
+| Voltage Gain            | 22.17 dB (12.83 V/V) | 23.04 dB (14.17 V/V) |
+| 3dB Bandwidth           | 38.9 MHz (simple RC) | 421.7 MHz            |
+| Unity Gain Bandwidth    | 5.98 GHz (GBW)       | 6.761 GHz            |
+| Max Output Swing (P-P)  | 1.189 V              | —                    |
+| Max Input Swing (P-P)   | ~92.7 mV             | —                    |
+| Rout                    | 4.09 kΩ              | —                    |
+
+---
+
+## 9. Discussion
+
+**On the gain:** The theoretical gain using the full formula (all λ ≠ 0, all transistors non-ideal) came out to 22.17 dB, and the simulation gave 23.04 dB — only 0.87 dB apart. This is a good result. The gain is lower than the simple gm1·(ro1∥ro2) = 25.3 dB estimate because M3's diode connection introduces source degeneration at M1's source. The degeneration impedance is (1/gm3 ∥ ro3) ≈ 249.75 Ω, which reduces the effective transconductance and brings the gain down. This is a trade-off — we lose some gain but gain biasing accuracy and linearity in return.
+
+**On the bandwidth:** The 3dB bandwidth of 421.7 MHz is much higher than the 38.9 MHz simple RC pole estimate. Source degeneration from M3 lowers the effective Rout at the output node, which directly pushes the dominant pole to a higher frequency. So this topology naturally gives better bandwidth than a simple resistor-loaded CS stage.
+
+**On the UGB:** The UGB of 6.76 GHz is quite high for a single-stage amplifier driving a 1pF load. This is mainly because gm1 is large (4.52 mS, from the wide M1 with W/L = 152.6) and the bandwidth is wide. The GBW product of ~5.98 GHz matches well with the simulated UGB.
+
+**On saturation:** All three transistors were confirmed to be in deep saturation at the operating point — M1 (Vds/Vdsat = 4.9×), M3 (Vds/Vdsat = 6.2×), and M2 (|Vds|/|Vdsat| = 3.6×). This is important because the small-signal model (and hence all our gain calculations) is only valid in saturation.
+
+**On the current mirror:** M3 carries the same current as M1 (0.301 mA each), confirming the mirror is working. The W/L ratio M1/M3 = 152.6/101.5 ≈ 1.50, but both carry equal current because the body effect on M1 (Vbs = −0.0537V) shifts its threshold voltage up slightly, adjusting the operating point until current equality is reached.
+
+---
+
+## 10. Conclusion
+
+We designed a CS amplifier with a PMOS current mirror active load in TSMC 180nm using LTSpice, and all the design targets were met. The DC operating point was fixed at Vout = 1.06V with all three transistors in saturation and total power of 0.452 mW — within the 0.5mW budget. The theoretical gain from the formula (22.17 dB) matched the simulation (23.04 dB) with less than 1 dB error, which validates our design approach. The 3dB bandwidth came out to 421.7 MHz with CL = 1pF, and the UGB was 6.761 GHz — both much better than what a simple resistor load would give. The transient simulation confirmed clean linear amplification with no distortion, consistent with all transistors being in saturation.
+
+The main trade-off in this configuration is that M3's source degeneration reduces gain compared to the ideal case. A future improvement would be to use a cascode current mirror, which removes the source degeneration effect while keeping accurate current biasing.
+
+---
+
+*Simulated using LTSpice XVII with TSMC BSIM3 180nm CMOS models.*  
+*All data taken from exp-02-c.log and exp-02-c.raw output files.*
+
+
+
