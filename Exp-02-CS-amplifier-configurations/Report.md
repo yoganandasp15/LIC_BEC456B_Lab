@@ -601,7 +601,47 @@ A Common Source amplifier with PMOS active load and diode-connected NMOS source 
 The topology delivers high gain-bandwidth product due to the elevated output impedance resulting from both the PMOS active load (ro2 = 10.3 kΩ) and the source degeneration boosting of M1's drain resistance to 14.63 kΩ, yielding Rout = 6.04 kΩ. The primary trade-off is gain reduction from M3's degeneration impedance. A future design improvement would be to replace M3 with a properly ratioed current mirror to eliminate source degeneration while maintaining accurate bias current control.
 
 ---
+# Overall Experiment Comparison: Configurations A, B, and C
 
+To conclude the experiment, we can directly compare the three source degeneration topologies based on the extracted small-signal parameters, simulated AC/Transient performance, and mathematical models. 
+
+## 1. Performance Metrics Summary
+
+| Parameter | Config A: Resistor ($R_S$) | Config B: Current Source | Config C: Diode-Connected |
+| :--- | :--- | :--- | :--- |
+| **Degeneration Element** | Physical Resistor ($R_S$) | NMOS in Saturation ($M_2$) | Diode-Connected NMOS ($M_3$) |
+| **Degeneration Resistance** | 666.67 Ω | 5.26 kΩ ($r_{o2}$) | 249.75 Ω ($1/g_{m3} || r_{o3}$) |
+| **Total Output Resistance ($R_{out}$)**| 9.69 kΩ | 9.99 kΩ | 6.04 kΩ |
+| **DC Power Dissipation** | 451.05 µW | 450 µW | 452 µW |
+| **Simulated AC Mid-band Gain** | 10.99 V/V (20.82 dB) | 1.79 V/V (5.08 dB) | 14.17 V/V (23.04 dB) |
+| **Theoretical Gain** | 10.07 V/V | 1.766 V/V (4.94 dB) | 12.83 V/V (22.17 dB) |
+| **Unity Gain Bandwidth (UGB)** | 3.21GHz | 458.14 MHz | 6.761 GHz |
+
+---
+
+## 2. Detailed Justifications and Insights
+
+### Why is the Voltage Gain so drastically different across configurations?
+The voltage gain in a source-degenerated common source amplifier is heavily dependent on the small-signal impedance present at the source node. 
+* **Config C has the highest gain (14.17 V/V):** The diode-connected NMOS provides a very low small-signal resistance of roughly $1/g_{m3}$ (calculated as 249.75 Ω). Because this degeneration value is the smallest of the three, it subtracts the least amount of effective transconductance, allowing the amplifier to achieve the highest gain.
+* **Config A is balanced (10.99 V/V):** We manually placed a 666.67 Ω resistor here. It provides more negative feedback than Config C, which drops the gain slightly but ensures excellent, predictable linearity.
+* **Config B has exceptionally low gain (1.79 V/V):** By using an active current source for bias stability, we introduced a massive output resistance ($r_{o2}$ = 5.26 kΩ) at the source node. This heavy degeneration mathematically chokes the effective $G_m$ down to just 0.1768 mA/V, entirely tanking the voltage amplification.
+
+### Why does the Output Resistance ($R_{out}$) behave this way?
+Source degeneration acts as series-series feedback, which naturally boosts the output resistance looking into the drain of the main amplifying transistor ($R_{down}$).
+* In **Config B**, the massive 5.26 kΩ degeneration resistor shoots the NMOS drain resistance up to an incredible 217.77 kΩ. However, the total $R_{out}$ is the parallel combination of the NMOS and the PMOS active load ($R_{down} || r_{o3}$). Because the PMOS load is only 10.47 kΩ, it creates a severe bottleneck. The total $R_{out}$ maxes out at 9.99 kΩ, meaning the massive boost on the NMOS side is largely wasted.
+* In **Config C**, the low degeneration resistance (249.75 Ω) only moderately boosts the NMOS drain resistance to 14.63 kΩ. When placed in parallel with the 10.3 kΩ PMOS load, the total $R_{out}$ sits lower at 6.04 kΩ.
+
+### Why is Config C's Bandwidth (UGB = 6.76 GHz) so much higher than Config B's?
+Bandwidth and gain are deeply interconnected (Gain-Bandwidth Product). Config B applies extremely heavy degeneration, which lowers the mid-band gain to just 5.08 dB. Consequently, it only takes a small frequency roll-off to hit the 0 dB Unity Gain mark, resulting in a low UGB of 458.14 MHz. 
+Config C, on the other hand, maintains a high intrinsic transconductance and mid-band gain (23.04 dB), pushing the 0 dB crossing point much further out to 6.761 GHz. This makes Config C vastly superior for high-frequency, on-chip signal amplification.
+
+### Final Verdict on the Trade-offs
+1. **Config A** is ideal for discrete board-level design where physical resistors are cheap and perfectly linear.
+2. **Config B** is terrible for voltage amplification but provides rock-solid DC bias current stability, making it ideal for the tail current of a differential pair.
+3. **Config C** is the ultimate IC designer's compromise: it eliminates the massive silicon footprint of a physical resistor, tracks process/temperature variations perfectly (since both NMOS devices are on the same die), and provides the highest gain and bandwidth of the group.
+
+---
 *Simulated using LTSpice XVII with TSMC BSIM3 180nm CMOS models.*  
 *All data extracted from exp-02-c.log and exp-02-c.raw output files.*
 
